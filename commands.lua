@@ -1,19 +1,22 @@
-local function startsWith(str, start)
-	return str:sub(1, #start) == start
+local function startsWith(s, prefix)
+	return s:sub(1, #prefix) == prefix
 end
 
-local function assertf(condition, fmessage, ...)
-	return assert(condition, string.format(fmessage, ...))
+local function assertf(condition, message, ...)
+	return assert(condition, string.format(message, ...))
 end
 
 local function newInstance()
-	local commands = {
+	local this = {
 		prefix = '/',
 		aliases = {},
 		commands = {},
+		metadata = {},
 	}
-	
-	function commands.create(cfg)
+
+	local __metadata = {}
+
+	function this.create(cfg)
 		local name = cfg.name
 		local desc = cfg.desc or 'No description'
 		local places = cfg.places or {}
@@ -21,33 +24,38 @@ local function newInstance()
 		local callback = cfg.callback
 
 		assert(name and name:match('^%s*$') == nil, 'field "name" not found or is empty')
-		assert(callback or type(callback) == 'function', 'field "callback" not provided or is not a function')
+		assert(callback and type(callback) == 'function', 'field "callback" not provided or is not a function')
 
-		local foundAlias = commands.aliases[name]
-		local foundCommand = commands.commands[name]
+		local metadata = {
+			name = name,
+			desc = desc,
+			places = places,
+			aliases = {}
+		}
+
+		local foundCommand = this.commands[name]
+		local foundAlias = this.aliases[name]
 
 		assertf(
 			(foundAlias or foundCommand) == nil,
 			'command %q conflicts with an existing %s', name, foundAlias and 'alias' or 'command')
 
-		commands.commands[name] = {
-			desc = desc,
-			places = places,
-			aliases = {},
-			callback = callback
-		}
+		this.commands[name] = callback
 
 		for _, alias in ipairs(aliases) do
 			assertf(
-				(commands.commands[alias] or commands.aliases[alias]) == nil,
-				'alias %q conflicts with an existing %s',alias, commands.aliases[alias] and 'alias' or 'command')
+				(this.commands[alias] or this.aliases[alias]) == nil,
+				'alias %q conflicts with an existing %s', alias, this.commands[alias] and 'command' or 'alias')
 
-			table.insert(commands.commands[name].aliases, alias)
-			commands.aliases[alias] = name
+			table.insert(metadata.aliases, alias)
+			this.aliases[alias] = name
 		end
+
+		__metadata[callback] = metadata
+		table.insert(this.metadata, metadata)
 	end
 
-	function commands.parse(message, enforcePrefix)
+	function this.parse(message, enforcePrefix)
 		local args = {}
 
 		for word in message:gmatch('[%w%p]+') do
@@ -57,27 +65,27 @@ local function newInstance()
 		if not args[1] then return true end
 
 		local command = args[1]:lower()
-		local hasPrefix = startsWith(command, commands.prefix)
-		command = hasPrefix and command:sub(#commands.prefix + 1) or command
+		local hasPrefix = startsWith(command, this.prefix)
+		command = hasPrefix and command:sub(#this.prefix + 1) or command
 
-		if not hasPrefix and enforcePrefix then
-			return false, 'prefix not found in message'
-		end
+		if not hasPrefix and enforcePrefix then return true end
 
-		local found = commands.commands[commands.aliases[command] or command]
+		local found = this.commands[this.aliases[command] or command]
 
 		if not found then
-			return false, string.format('command %q does not exist', command)
+			return false, string.format('failed to find command %q', command)
 		end
 
-		if #found.places > 0 and not table.find(found.places, game.PlaceId) then
-			return false, string.format('command %q is not available in this place', command)
+		local meta = __metadata[found]
+
+		if #meta.places > 0 and not table.find(meta.places, game.PlaceId) then
+			return false, string.format('command %q is not avaliable in this place', command)
 		end
 
-		return pcall(found.callback, (table.unpack or unpack)(args, 2))
+		return pcall(found, (table.unpack or unpack)(args, 2))
 	end
-	
-	return commands
+
+	return this
 end
 
 return newInstance()
