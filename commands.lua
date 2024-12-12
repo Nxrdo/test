@@ -58,11 +58,7 @@ local function newInstance()
 	end
 
 	function this.parse(message, enforcePrefix)
-		local args = {}
-
-		for word in message:gmatch('[^%s]+') do
-			table.insert(args, word)
-		end
+		local args = message:split(' ')
 
 		if not args[1] then return true end
 
