@@ -60,7 +60,7 @@ local function newInstance()
 	function this.parse(message, enforcePrefix)
 		local args = {}
 
-		for word in message:gmatch('[%w%p]+') do
+		for word in message:gmatch('[^%s]+') do
 			table.insert(args, word)
 		end
 
