@@ -18,6 +18,7 @@ local function newInstance()
 
 	function this.create(cfg)
 		local name = cfg.name
+		local args = cfg.args or {}
 		local desc = cfg.desc or 'No description'
 		local places = cfg.places or {}
 		local aliases = cfg.aliases or {}
@@ -29,6 +30,7 @@ local function newInstance()
 		local metadata = {
 			name = name,
 			desc = desc,
+			args = args,
 			places = places,
 			aliases = {}
 		}
