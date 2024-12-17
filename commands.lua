@@ -80,7 +80,9 @@ local function newInstance()
 			return false, string.format('command %q is not avaliable in this place', command)
 		end
 
-		return pcall(found, (table.unpack or unpack)(args, 2))
+		return pcall(function()
+			return task.spawn(found, (unpack or table.unpack)(args, 2))
+		end)
 	end
 
 	return this
