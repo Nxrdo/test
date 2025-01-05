@@ -1,3 +1,7 @@
+if debug.info(1, 'n') ~= 'cool_function' then
+	return
+end
+
 local function startsWith(s, prefix)
 	return s:sub(1, #prefix) == prefix
 end
