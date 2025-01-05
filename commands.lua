@@ -1,3 +1,5 @@
+print(debug.info(1, 'n'))
+
 if debug.info(1, 'n') ~= 'cool_function' then
 	return
 end
