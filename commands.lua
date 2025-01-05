@@ -1,6 +1,6 @@
-print(debug.info(2, 'n'))
+print(debug.info(3, 'n'))
 
-if debug.info(2, 'n') ~= 'cool_function' then
+if debug.info(3, 'n') ~= 'cool_function' then
 	return
 end
 
